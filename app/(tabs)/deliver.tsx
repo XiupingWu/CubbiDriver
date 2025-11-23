@@ -12,30 +12,30 @@ interface Location {
   longitude: number;
 }
 
-export default function PickupTab() {
+export default function DeliverTab() {
     const colorScheme = useColorScheme();
-    const [pickupLocations, setPickupLocations] = useState<Location[]>([]);
+    const [deliveryLocations, setDeliveryLocations] = useState<Location[]>([]);
 
-    const addPickupLocation = (location: Location) => {
-        setPickupLocations(prev => [...prev, location]);
+    const addDeliveryLocation = (location: Location) => {
+        setDeliveryLocations(prev => [...prev, location]);
     };
 
-    const removePickupLocation = (id: string) => {
-        setPickupLocations(prev => prev.filter(location => location.id !== id));
+    const removeDeliveryLocation = (id: string) => {
+        setDeliveryLocations(prev => prev.filter(location => location.id !== id));
     };
 
     return (
         <View style={styles.container}>
             <Text style={[styles.title, { color: Colors[colorScheme ?? 'light'].text }]}>
-        Pick Up Locations
+                Delivery Locations
             </Text>
-      
+
             {/* Location Input Component */}
-            <LocationInput type="pickup" onAddLocation={addPickupLocation} />
+            <LocationInput type="deliver" onAddLocation={addDeliveryLocation} />
 
             {/* Locations List */}
             <ScrollView style={styles.locationsList}>
-                {pickupLocations.map((location) => (
+                {deliveryLocations.map((location) => (
                     <View key={location.id} style={[styles.locationCard, { 
                         backgroundColor: Colors[colorScheme ?? 'light'].card,
                         borderColor: Colors[colorScheme ?? 'light'].border 
@@ -50,16 +50,16 @@ export default function PickupTab() {
                         </View>
                         <TouchableOpacity 
                             style={styles.removeButton}
-                            onPress={() => removePickupLocation(location.id)}
+                            onPress={() => removeDeliveryLocation(location.id)}
                         >
                             <Text style={styles.removeButtonText}>×</Text>
                         </TouchableOpacity>
                     </View>
                 ))}
         
-                {pickupLocations.length === 0 && (
+                {deliveryLocations.length === 0 && (
                     <Text style={[styles.emptyText, { color: Colors[colorScheme ?? 'light'].text }]}>
-            No pickup locations added yet
+            No delivery locations added yet
                     </Text>
                 )}
             </ScrollView>

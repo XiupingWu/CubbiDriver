@@ -28,8 +28,15 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Index page',
-                    tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+                    title: 'Pick up',
+                    tabBarIcon: ({ color }) => <TabBarIcon name="truck" color={color} />,
+                }}
+            />
+            <Tabs.Screen
+                name="deliver"
+                options={{
+                    title: 'Deliver',
+                    tabBarIcon: ({ color }) => <TabBarIcon name="map-marker" color={color} />,
                 }}
             />
         </Tabs>
