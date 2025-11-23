@@ -1,7 +1,7 @@
-import LocationInput from '@/components/LocationInput';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import React, { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Location {
@@ -14,24 +14,45 @@ interface Location {
 
 export default function DeliverTab() {
     const colorScheme = useColorScheme();
+    const router = useRouter();
+    const params = useLocalSearchParams();
     const [deliveryLocations, setDeliveryLocations] = useState<Location[]>([]);
 
-    const addDeliveryLocation = (location: Location) => {
-        setDeliveryLocations(prev => [...prev, location]);
-    };
+    // Handle location added from modal
+    useEffect(() => {
+        if (params.addedLocation && params.locationType === 'deliver') {
+            try {
+                const newLocation = JSON.parse(params.addedLocation as string);
+                setDeliveryLocations(prev => [...prev, newLocation]);
+                // Clear the params to avoid adding the same location multiple times
+                router.setParams({ addedLocation: undefined, locationType: undefined });
+            } catch (error) {
+                console.error('Error parsing location data:', error);
+            }
+        }
+    }, [params.addedLocation, params.locationType]);
 
     const removeDeliveryLocation = (id: string) => {
         setDeliveryLocations(prev => prev.filter(location => location.id !== id));
     };
 
+    const openAddLocationModal = () => {
+        router.push('/modal?type=deliver');
+    };
+
     return (
         <View style={styles.container}>
             <Text style={[styles.title, { color: Colors[colorScheme ?? 'light'].text }]}>
-                Delivery Locations
+        Delivery Locations
             </Text>
 
-            {/* Location Input Component */}
-            <LocationInput type="deliver" onAddLocation={addDeliveryLocation} />
+            {/* Add Location Button */}
+            <TouchableOpacity 
+                style={[styles.addButton, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
+                onPress={openAddLocationModal}
+            >
+                <Text style={styles.addButtonText}>+ Add Delivery Location</Text>
+            </TouchableOpacity>
 
             {/* Locations List */}
             <ScrollView style={styles.locationsList}>
@@ -77,6 +98,17 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
+    },
+    addButton: {
+        padding: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    addButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
     },
     locationsList: {
         flex: 1,
