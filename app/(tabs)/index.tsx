@@ -1,10 +1,10 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import { supabase } from '@/lib/supabaseClient';
+import { optimizeRoute } from '@/lib/routeOptimizer';
 import { usePickupLocationsStore } from '@/stores/pickupLocationsStore';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function PickupTab() {
     const colorScheme = useColorScheme();
@@ -34,55 +34,8 @@ export default function PickupTab() {
         router.push('/modal?type=pickup');
     };
 
-    const optimizeRoute = async () => {
-        if (selectedLocations.length < 2) {
-            Alert.alert('Error', 'Please select at least 2 locations to optimize route');
-            return;
-        }
-
-        try {
-            const { data, error } = await supabase.functions.invoke('route-optimizer', {
-                body: JSON.stringify({                    
-                    table: 'pickup_locations',
-                    ids: selectedLocations,}),
-            })
-
-            if(error) {
-                throw error
-            }
-
-            // const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/route-optimizer`, {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'x-api-key': process.env.EXPO_PUBLIC_ADD_LOCATION_KEY || 'your-api-key',
-            //     },
-            //     body: JSON.stringify({
-            //         table: 'pickup_locations',
-            //         ids: selectedLocations,
-            //     }),
-            // });
-
-            // if (!response.ok) {
-            //     throw new Error(`HTTP error! status: ${response.status}`);
-            // }
-
-            // const result = await response.json();
-            
-            if (data.mapsUrl) {
-                const canOpen = await Linking.canOpenURL(data.mapsUrl);
-                if (canOpen) {
-                    await Linking.openURL(data.mapsUrl);
-                } else {
-                    Alert.alert('Error', 'Cannot open Google Maps');
-                }
-            } else {
-                Alert.alert('Error', 'No route optimization data returned');
-            }
-        } catch (error) {
-            console.error('Route optimization error:', error);
-            Alert.alert('Error', 'Failed to optimize route');
-        }
+    const handleOptimizeRoute = async () => {
+        await optimizeRoute('pickup_locations', selectedLocations);
     };
 
     const clearSelection = () => {
@@ -100,7 +53,7 @@ export default function PickupTab() {
                 <View style={styles.actionButtonsContainer}>
                     <TouchableOpacity 
                         style={[styles.optimizeButton, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
-                        onPress={optimizeRoute}
+                        onPress={handleOptimizeRoute}
                     >
                         <Text style={styles.optimizeButtonText}>
                             Optimize Route ({selectedLocations.length})
