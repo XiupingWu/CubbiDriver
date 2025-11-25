@@ -1,39 +1,22 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useDeliverLocationsStore } from '@/stores/deliverLocationsStore';
+import { useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-interface Location {
-  id: string;
-  name: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-}
 
 export default function DeliverTab() {
     const colorScheme = useColorScheme();
     const router = useRouter();
-    const params = useLocalSearchParams();
-    const [deliveryLocations, setDeliveryLocations] = useState<Location[]>([]);
+    const { locations, loading, error, fetchLocations, removeLocation } = useDeliverLocationsStore();
 
-    // Handle location added from modal
+    // Fetch locations on component mount
     useEffect(() => {
-        if (params.addedLocation && params.locationType === 'deliver') {
-            try {
-                const newLocation = JSON.parse(params.addedLocation as string);
-                setDeliveryLocations(prev => [...prev, newLocation]);
-                // Clear the params to avoid adding the same location multiple times
-                router.setParams({ addedLocation: undefined, locationType: undefined });
-            } catch (error) {
-                console.error('Error parsing location data:', error);
-            }
-        }
-    }, [params.addedLocation, params.locationType]);
+        fetchLocations();
+    }, []);
 
     const removeDeliveryLocation = (id: string) => {
-        setDeliveryLocations(prev => prev.filter(location => location.id !== id));
+        removeLocation(id);
     };
 
     const openAddLocationModal = () => {
@@ -56,7 +39,7 @@ export default function DeliverTab() {
 
             {/* Locations List */}
             <ScrollView style={styles.locationsList}>
-                {deliveryLocations.map((location) => (
+                {locations.map((location) => (
                     <View key={location.id} style={[styles.locationCard, { 
                         backgroundColor: Colors[colorScheme ?? 'light'].card,
                         borderColor: Colors[colorScheme ?? 'light'].border 
@@ -78,7 +61,7 @@ export default function DeliverTab() {
                     </View>
                 ))}
         
-                {deliveryLocations.length === 0 && (
+                {locations.length === 0 && (
                     <Text style={[styles.emptyText, { color: Colors[colorScheme ?? 'light'].text }]}>
             No delivery locations added yet
                     </Text>

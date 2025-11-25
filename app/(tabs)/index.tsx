@@ -1,39 +1,22 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { usePickupLocationsStore } from '@/stores/pickupLocationsStore';
+import { useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-interface Location {
-    id: string;
-    name: string;
-    address: string;
-    latitude: number;
-    longitude: number;
-}
 
 export default function PickupTab() {
     const colorScheme = useColorScheme();
     const router = useRouter();
-    const params = useLocalSearchParams();
-    const [pickupLocations, setPickupLocations] = useState<Location[]>([]);
+    const { locations, loading, error, fetchLocations, removeLocation } = usePickupLocationsStore();
 
-    // Handle location added from modal
+    // Fetch locations on component mount
     useEffect(() => {
-        if (params.addedLocation && params.locationType === 'pickup') {
-            try {
-                const newLocation = JSON.parse(params.addedLocation as string);
-                setPickupLocations(prev => [...prev, newLocation]);
-                // Clear the params to avoid adding the same location multiple times
-                router.setParams({ addedLocation: undefined, locationType: undefined });
-            } catch (error) {
-                console.error('Error parsing location data:', error);
-            }
-        }
-    }, [params.addedLocation, params.locationType]);
+        fetchLocations();
+    }, []);
 
     const removePickupLocation = (id: string) => {
-        setPickupLocations(prev => prev.filter(location => location.id !== id));
+        removeLocation(id);
     };
 
     const openAddLocationModal = () => {
@@ -56,7 +39,7 @@ export default function PickupTab() {
 
             {/* Locations List */}
             <ScrollView style={styles.locationsList}>
-                {pickupLocations.map((location) => (
+                {locations.map((location) => (
                     <View key={location.id} style={[styles.locationCard, { 
                         backgroundColor: Colors[colorScheme ?? 'light'].card,
                         borderColor: Colors[colorScheme ?? 'light'].border 
@@ -78,7 +61,7 @@ export default function PickupTab() {
                     </View>
                 ))}
         
-                {pickupLocations.length === 0 && (
+                {locations.length === 0 && (
                     <Text style={[styles.emptyText, { color: Colors[colorScheme ?? 'light'].text }]}>
             No pickup locations added yet
                     </Text>

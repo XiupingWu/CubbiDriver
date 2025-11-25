@@ -1,46 +1,47 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
+import { useDeliverLocationsStore } from '@/stores/deliverLocationsStore';
+import { usePickupLocationsStore } from '@/stores/pickupLocationsStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
-
-interface Location {
-    id: string;
-    name: string;
-    address: string;
-    latitude: number;
-    longitude: number;
-}
 
 export default function ModalScreen() {
     const colorScheme = useColorScheme();
     const router = useRouter();
     const params = useLocalSearchParams();
     const type = params.type as 'pickup' | 'deliver';
+    
+    const { addLocation: addPickupLocation } = usePickupLocationsStore();
+    const { addLocation: addDeliverLocation } = useDeliverLocationsStore();
 
     const [selectedPlace, setSelectedPlace] = useState<any>(null);
 
-    const handleAddLocation = () => {
+    const handleAddLocation = async () => {
         if (!selectedPlace) {
             Alert.alert('Error', 'Please select a location first');
             return;
         }
 
-        const newLocation: Location = {
-            id: Date.now().toString(),
+        const newLocation = {
             name: selectedPlace.name,
             address: selectedPlace.formatted_address,
             latitude: selectedPlace.geometry.location.lat,
             longitude: selectedPlace.geometry.location.lng,
         };
 
-        // Pass the new location back to the parent screen
-        router.setParams({ 
-            addedLocation: JSON.stringify(newLocation),
-            locationType: type 
-        });
-        router.back();
+        try {
+            if (type === 'pickup') {
+                await addPickupLocation(newLocation);
+            } else {
+                await addDeliverLocation(newLocation);
+            }
+            router.back();
+        } catch (error) {
+            Alert.alert('Error', 'Failed to add location');
+            console.error('Error adding location:', error);
+        }
     };
     
     const placeholder = type === 'pickup' 
