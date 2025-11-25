@@ -2,25 +2,80 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { useDeliverLocationsStore } from '@/stores/deliverLocationsStore';
 import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function DeliverTab() {
     const colorScheme = useColorScheme();
     const router = useRouter();
     const { locations, loading, error, fetchLocations, removeLocation } = useDeliverLocationsStore();
+    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
 
     // Fetch locations on component mount
     useEffect(() => {
         fetchLocations();
     }, []);
 
+    const toggleLocationSelection = (id: string) => {
+        setSelectedLocations(prev => 
+            prev.includes(id) 
+                ? prev.filter(locationId => locationId !== id)
+                : [...prev, id]
+        );
+    };
+
     const removeDeliveryLocation = (id: string) => {
         removeLocation(id);
+        setSelectedLocations(prev => prev.filter(locationId => locationId !== id));
     };
 
     const openAddLocationModal = () => {
         router.push('/modal?type=deliver');
+    };
+
+    const optimizeRoute = async () => {
+        if (selectedLocations.length < 2) {
+            Alert.alert('Error', 'Please select at least 2 locations to optimize route');
+            return;
+        }
+
+        try {
+            const response = await fetch('https://your-supabase-url.functions.supabase.co/route-optimizer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': process.env.EXPO_PUBLIC_ADD_LOCATION_KEY || 'your-api-key',
+                },
+                body: JSON.stringify({
+                    table: 'deliver_locations',
+                    ids: selectedLocations,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.mapsUrl) {
+                const canOpen = await Linking.canOpenURL(result.mapsUrl);
+                if (canOpen) {
+                    await Linking.openURL(result.mapsUrl);
+                } else {
+                    Alert.alert('Error', 'Cannot open Google Maps');
+                }
+            } else {
+                Alert.alert('Error', 'No route optimization data returned');
+            }
+        } catch (error) {
+            console.error('Route optimization error:', error);
+            Alert.alert('Error', 'Failed to optimize route');
+        }
+    };
+
+    const clearSelection = () => {
+        setSelectedLocations([]);
     };
 
     return (
@@ -28,6 +83,28 @@ export default function DeliverTab() {
             <Text style={[styles.title, { color: Colors[colorScheme ?? 'light'].text }]}>
         Delivery Locations
             </Text>
+
+            {/* Action Buttons */}
+            {selectedLocations.length > 0 && (
+                <View style={styles.actionButtonsContainer}>
+                    <TouchableOpacity 
+                        style={[styles.optimizeButton, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
+                        onPress={optimizeRoute}
+                    >
+                        <Text style={styles.optimizeButtonText}>
+                            Optimize Route ({selectedLocations.length})
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={styles.clearButton}
+                        onPress={clearSelection}
+                    >
+                        <Text style={[styles.clearButtonText, { color: Colors[colorScheme ?? 'light'].text }]}>
+                            Clear
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             {/* Add Location Button */}
             <TouchableOpacity 
@@ -39,27 +116,56 @@ export default function DeliverTab() {
 
             {/* Locations List */}
             <ScrollView style={styles.locationsList}>
-                {locations.map((location) => (
-                    <View key={location.id} style={[styles.locationCard, { 
-                        backgroundColor: Colors[colorScheme ?? 'light'].card,
-                        borderColor: Colors[colorScheme ?? 'light'].border 
-                    }]}>
-                        <View style={styles.locationInfo}>
-                            <Text style={[styles.locationName, { color: Colors[colorScheme ?? 'light'].text }]}>
-                                {location.name}
-                            </Text>
-                            <Text style={[styles.locationAddress, { color: Colors[colorScheme ?? 'light'].text }]}>
-                                {location.address}
-                            </Text>
-                        </View>
+                {locations.map((location) => {
+                    const isSelected = selectedLocations.includes(location.id);
+                    return (
                         <TouchableOpacity 
-                            style={styles.removeButton}
-                            onPress={() => removeDeliveryLocation(location.id)}
+                            key={location.id} 
+                            style={[
+                                styles.locationCard, 
+                                { 
+                                    backgroundColor: isSelected 
+                                        ? Colors[colorScheme ?? 'light'].tint + '20' 
+                                        : Colors[colorScheme ?? 'light'].card,
+                                    borderColor: isSelected 
+                                        ? Colors[colorScheme ?? 'light'].tint 
+                                        : Colors[colorScheme ?? 'light'].border 
+                                }
+                            ]}
+                            onPress={() => toggleLocationSelection(location.id)}
                         >
-                            <Text style={styles.removeButtonText}>×</Text>
+                            <View style={styles.locationInfo}>
+                                <Text style={[styles.locationName, { 
+                                    color: isSelected 
+                                        ? Colors[colorScheme ?? 'light'].tint 
+                                        : Colors[colorScheme ?? 'light'].text 
+                                }]}>
+                                    {location.name}
+                                </Text>
+                                <Text style={[styles.locationAddress, { 
+                                    color: isSelected 
+                                        ? Colors[colorScheme ?? 'light'].tint + 'CC' 
+                                        : Colors[colorScheme ?? 'light'].text 
+                                }]}>
+                                    {location.address}
+                                </Text>
+                            </View>
+                            <View style={styles.locationActions}>
+                                {isSelected && (
+                                    <View style={styles.selectedIndicator}>
+                                        <Text style={styles.selectedIndicatorText}>✓</Text>
+                                    </View>
+                                )}
+                                <TouchableOpacity 
+                                    style={styles.removeButton}
+                                    onPress={() => removeDeliveryLocation(location.id)}
+                                >
+                                    <Text style={styles.removeButtonText}>×</Text>
+                                </TouchableOpacity>
+                            </View>
                         </TouchableOpacity>
-                    </View>
-                ))}
+                    );
+                })}
         
                 {locations.length === 0 && (
                     <Text style={[styles.emptyText, { color: Colors[colorScheme ?? 'light'].text }]}>
@@ -81,6 +187,33 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
+    },
+    actionButtonsContainer: {
+        flexDirection: 'row',
+        marginBottom: 16,
+        gap: 12,
+    },
+    optimizeButton: {
+        flex: 1,
+        padding: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    optimizeButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    clearButton: {
+        padding: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ccc',
+    },
+    clearButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
     },
     addButton: {
         padding: 16,
@@ -116,6 +249,24 @@ const styles = StyleSheet.create({
     locationAddress: {
         fontSize: 14,
         opacity: 0.7,
+    },
+    locationActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    selectedIndicator: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#4CAF50',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 8,
+    },
+    selectedIndicatorText: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: 'bold',
     },
     removeButton: {
         padding: 8,
