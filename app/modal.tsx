@@ -4,7 +4,7 @@ import { useDeliverLocationsStore } from '@/stores/deliverLocationsStore';
 import { usePickupLocationsStore } from '@/stores/pickupLocationsStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
 export default function ModalScreen() {
@@ -17,6 +17,7 @@ export default function ModalScreen() {
     const { addLocation: addDeliverLocation } = useDeliverLocationsStore();
 
     const [selectedPlace, setSelectedPlace] = useState<any>(null);
+    const [customName, setCustomName] = useState('');
 
     const handleAddLocation = async () => {
         if (!selectedPlace) {
@@ -25,7 +26,7 @@ export default function ModalScreen() {
         }
 
         const newLocation = {
-            name: selectedPlace.name,
+            name: customName.trim() || selectedPlace.name,
             address: selectedPlace.formatted_address,
             latitude: selectedPlace.geometry.location.lat,
             longitude: selectedPlace.geometry.location.lng,
@@ -53,7 +54,31 @@ export default function ModalScreen() {
             <Text style={[styles.title, { color: Colors[colorScheme ?? 'light'].text }]}>
                 Add {type === 'pickup' ? 'Pick Up' : 'Delivery'} Location
             </Text>
+            
             <View style={styles.inputContainer}>
+                <Text style={[styles.label, { color: Colors[colorScheme ?? 'light'].text }]}>
+                    Location Name (Optional)
+                </Text>
+                <TextInput
+                    style={[
+                        styles.textInput,
+                        { 
+                            color: Colors[colorScheme ?? 'light'].text,
+                            borderColor: Colors[colorScheme ?? 'light'].border,
+                            backgroundColor: Colors[colorScheme ?? 'light'].card
+                        }
+                    ]}
+                    placeholder="Enter custom name for this location"
+                    placeholderTextColor={Colors[colorScheme ?? 'light'].text + '80'}
+                    value={customName}
+                    onChangeText={setCustomName}
+                />
+            </View>
+
+            <View style={styles.inputContainer}>
+                <Text style={[styles.label, { color: Colors[colorScheme ?? 'light'].text }]}>
+                    Search Location
+                </Text>
                 <GooglePlacesAutocomplete
                     placeholder={placeholder}
                     onPress={(data, details = null) => {
@@ -120,7 +145,19 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     inputContainer: {
-        marginBottom: 30,
+        marginBottom: 20,
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 8,
+    },
+    textInput: {
+        height: 44,
+        fontSize: 16,
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 12,
     },
     addButton: {
         padding: 16,

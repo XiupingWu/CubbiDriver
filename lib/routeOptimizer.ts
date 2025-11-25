@@ -1,4 +1,3 @@
-import { Alert, Linking } from 'react-native';
 import { supabase } from './supabaseClient';
 
 export interface RouteOptimizationResult {
@@ -15,8 +14,7 @@ export const optimizeRoute = async (
     selectedLocations: string[]
 ): Promise<RouteOptimizationResult | null> => {
     if (selectedLocations.length < 2) {
-        Alert.alert('Error', 'Please select at least 2 locations to optimize route');
-        return null;
+        throw new Error('Please select at least 2 locations to optimize route');
     }
 
     try {
@@ -31,21 +29,13 @@ export const optimizeRoute = async (
             throw new Error(error.message || 'Failed to optimize route');
         }
 
-        if (data?.mapsUrl) {
-            const canOpen = await Linking.canOpenURL(data.mapsUrl);
-            if (canOpen) {
-                await Linking.openURL(data.mapsUrl);
-            } else {
-                Alert.alert('Error', 'Cannot open Google Maps');
-            }
-        } else {
-            Alert.alert('Error', 'No route optimization data returned');
+        if (!data?.mapsUrl) {
+            throw new Error('No route optimization data returned');
         }
 
         return data;
     } catch (error) {
         console.error('Route optimization error:', error);
-        Alert.alert('Error', 'Failed to optimize route');
-        return null;
+        throw error;
     }
 };

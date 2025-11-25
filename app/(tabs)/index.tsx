@@ -1,16 +1,19 @@
+import { RouteOptimizationAnimation } from '@/components/RouteOptimizationAnimation';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { optimizeRoute } from '@/lib/routeOptimizer';
 import { usePickupLocationsStore } from '@/stores/pickupLocationsStore';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function PickupTab() {
     const colorScheme = useColorScheme();
     const router = useRouter();
     const { locations, loading, error, fetchLocations, removeLocation } = usePickupLocationsStore();
     const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+    const [animationVisible, setAnimationVisible] = useState(false);
+    const [animationType, setAnimationType] = useState<'loading' | 'success'>('loading');
 
     // Fetch locations on component mount
     useEffect(() => {
@@ -35,7 +38,42 @@ export default function PickupTab() {
     };
 
     const handleOptimizeRoute = async () => {
-        await optimizeRoute('pickup_locations', selectedLocations);
+        if (selectedLocations.length < 2) {
+            Alert.alert('Error', 'Please select at least 2 locations to optimize route');
+            return;
+        }
+
+        try {
+            // Show loading animation
+            setAnimationType('loading');
+            setAnimationVisible(true);
+
+            // Call route optimization
+            const result = await optimizeRoute('pickup_locations', selectedLocations);
+            
+            if (result?.mapsUrl) {
+                // Show success animation
+                setAnimationType('success');
+                
+                // Wait for success animation to complete, then open Google Maps
+                setTimeout(async () => {
+                    setAnimationVisible(false);
+                    const canOpen = await Linking.canOpenURL(result.mapsUrl);
+                    if (canOpen) {
+                        await Linking.openURL(result.mapsUrl);
+                    } else {
+                        Alert.alert('Error', 'Cannot open Google Maps');
+                    }
+                }, 1500);
+            } else {
+                setAnimationVisible(false);
+                Alert.alert('Error', 'No route optimization data returned');
+            }
+        } catch (error) {
+            setAnimationVisible(false);
+            console.error('Route optimization error:', error);
+            Alert.alert('Error', error instanceof Error ? error.message : 'Failed to optimize route');
+        }
     };
 
     const clearSelection = () => {
@@ -44,6 +82,12 @@ export default function PickupTab() {
 
     return (
         <View style={styles.container}>
+            <RouteOptimizationAnimation
+                visible={animationVisible}
+                type={animationType}
+                message={animationType === 'loading' ? 'Optimizing your route...' : 'Route optimized successfully!'}
+            />
+
             <Text style={[styles.title, { color: Colors[colorScheme ?? 'light'].text }]}>
         Pick Up Locations
             </Text>
