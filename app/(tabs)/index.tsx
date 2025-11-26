@@ -99,7 +99,7 @@ export default function PickupTab() {
                         style={[styles.optimizeButton, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
                         onPress={handleOptimizeRoute}
                     >
-                        <Text style={styles.optimizeButtonText}>
+                        <Text style={[styles.optimizeButtonText, {color: colorScheme==='dark'? '#000':'#fff'}]}>
                             Optimize Route ({selectedLocations.length})
                         </Text>
                     </TouchableOpacity>
@@ -119,7 +119,7 @@ export default function PickupTab() {
                 style={[styles.addButton, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
                 onPress={openAddLocationModal}
             >
-                <Text style={styles.addButtonText}>+ Add Pickup Location</Text>
+                <Text style={[styles.addButtonText, {color: colorScheme === 'dark'? '#000000' : '#fff'}]}>+ Add Pickup Location</Text>
             </TouchableOpacity>
 
             {/* Locations List */}

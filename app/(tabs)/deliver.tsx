@@ -89,7 +89,7 @@ export default function DeliverTab() {
             />
 
             <Text style={[styles.title, { color: Colors[colorScheme ?? 'light'].text }]}>
-        Delivery Locations
+                Delivery Locations
             </Text>
 
             {/* Action Buttons */}
@@ -99,7 +99,7 @@ export default function DeliverTab() {
                         style={[styles.optimizeButton, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
                         onPress={handleOptimizeRoute}
                     >
-                        <Text style={styles.optimizeButtonText}>
+                        <Text style={[styles.optimizeButtonText, {color: colorScheme==='dark'? '#000':'#fff'}]}>
                             Optimize Route ({selectedLocations.length})
                         </Text>
                     </TouchableOpacity>
@@ -116,10 +116,14 @@ export default function DeliverTab() {
 
             {/* Add Location Button */}
             <TouchableOpacity 
-                style={[styles.addButton, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
+                style={
+                    [   styles.addButton, 
+                        { backgroundColor: Colors[colorScheme ?? 'light'].tint}
+                    ]
+                }
                 onPress={openAddLocationModal}
             >
-                <Text style={styles.addButtonText}>+ Add Delivery Location</Text>
+                <Text style={[styles.addButtonText, {color: colorScheme === 'dark'? '#000000' : '#fff'}]}>+ Add Delivery Location</Text>
             </TouchableOpacity>
 
             {/* Locations List */}

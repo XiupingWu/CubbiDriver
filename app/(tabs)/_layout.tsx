@@ -29,6 +29,7 @@ export default function TabLayout() {
                 name="index"
                 options={{
                     title: 'Pick up',
+                    headerTitle: '',
                     tabBarIcon: ({ color }) => <TabBarIcon name="truck" color={color} />,
                 }}
             />

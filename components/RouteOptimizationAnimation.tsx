@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     checkmark: {
-        color: 'white',
+        color: 'green',
         fontSize: 28,
         fontWeight: 'bold',
     },
