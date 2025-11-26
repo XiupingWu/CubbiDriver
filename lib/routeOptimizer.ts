@@ -1,3 +1,4 @@
+import { getCurrentLocation } from './locationService';
 import { supabase } from './supabaseClient';
 
 export interface RouteOptimizationResult {
@@ -18,10 +19,21 @@ export const optimizeRoute = async (
     }
 
     try {
+        // Get user's current location for starting point
+        const userLocation = await getCurrentLocation();
+        
+        if (!userLocation) {
+            throw new Error('Unable to get your current location. Please enable location services and try again.');
+        }
+
         const { data, error } = await supabase.functions.invoke('route-optimizer', {
             body: {
                 table,
                 ids: selectedLocations,
+                currentLocation: {
+                    lat: userLocation.latitude,
+                    lng: userLocation.longitude,
+                },
             },
         });
 
