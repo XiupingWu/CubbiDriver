@@ -58,11 +58,44 @@ export default function DeliverTab() {
                 // Wait for success animation to complete, then open Google Maps
                 setTimeout(async () => {
                     setAnimationVisible(false);
+                    
+                    // Try to open Google Maps with multiple approaches
                     const canOpen = await Linking.canOpenURL(result.mapsUrl);
                     if (canOpen) {
-                        await Linking.openURL(result.mapsUrl);
+                        try {
+                            await Linking.openURL(result.mapsUrl);
+                        } catch (openError) {
+                            console.error('Failed to open Google Maps URL:', openError);
+                            // Fallback: Try to open Google Maps app directly
+                            const googleMapsAppUrl = 'comgooglemaps://';
+                            const canOpenApp = await Linking.canOpenURL(googleMapsAppUrl);
+                            if (canOpenApp) {
+                                await Linking.openURL(googleMapsAppUrl);
+                            } else {
+                                // Final fallback: Open in browser
+                                const browserUrl = result.mapsUrl.replace('https://maps.app.goo.gl/', 'https://www.google.com/maps/dir/');
+                                await Linking.openURL(browserUrl);
+                            }
+                        }
                     } else {
-                        Alert.alert('Error', 'Cannot open Google Maps');
+                        // If canOpenURL returns false, try direct approaches
+                        try {
+                            const googleMapsAppUrl = 'comgooglemaps://';
+                            const canOpenApp = await Linking.canOpenURL(googleMapsAppUrl);
+                            if (canOpenApp) {
+                                await Linking.openURL(googleMapsAppUrl);
+                            } else {
+                                // Fallback to browser
+                                const browserUrl = result.mapsUrl.replace('https://maps.app.goo.gl/', 'https://www.google.com/maps/dir/');
+                                await Linking.openURL(browserUrl);
+                            }
+                        } catch (fallbackError) {
+                            console.error('All fallback methods failed:', fallbackError);
+                            Alert.alert(
+                                'Google Maps Not Available', 
+                                'Please install Google Maps app or use a browser to view the route.'
+                            );
+                        }
                     }
                 }, 1500);
             } else {
